@@ -4,11 +4,15 @@ import com.example.sharesdemotask.models.Elvl;
 import com.example.sharesdemotask.models.Quote;
 import com.example.sharesdemotask.repositories.ElvlRepository;
 import com.example.sharesdemotask.repositories.QuoteRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 public class QuoteService {
 
@@ -28,27 +32,26 @@ public class QuoteService {
         return quoteRepo.findById(id);
     }
 
-    public List<Quote> getByIsin(String isin) {
-        return quoteRepo.findByIsin(isin);
-    }
-
+    @Async
     @Transactional
     // saving new quote
-    public void create(Quote quote) {
+    public CompletableFuture<Void> create(Quote quote) {
+
+        log.info("Thread " + Thread.currentThread().getName() + " is SAVING NEW QUOTE " + quote);
 
         // creating or update command
         quoteRepo.save(quote);
 
+        // NEEDS SYNCHRONIZATION
         // taking quote info
         String isin = quote.getIsin();
         Double bid = quote.getBid();
         Double ask = quote.getAsk();
         Double newBestPrice;
-
+        // if elvl for this isin is present, then update elvl
         // check if this isin is present in db
         Elvl elvlFromDb = elvlRepo.findByIsin(isin);
 
-        // if elvl for this isin is present, then update elvl
         if (elvlFromDb != null) {
             Double bestPriceFromDB = elvlFromDb.getBestPrice();
             if (bid > bestPriceFromDB) {
@@ -71,6 +74,10 @@ public class QuoteService {
             elvlRepo.save(newElvl);
         }
 
+        return CompletableFuture.completedFuture(null);
+    }
 
+    public List<Quote> getByIsin(String isin) {
+        return quoteRepo.findByIsin(isin);
     }
 }

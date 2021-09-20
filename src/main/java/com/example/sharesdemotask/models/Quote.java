@@ -59,4 +59,13 @@ public class Quote {
     public Integer getId() {
         return id;
     }
+
+    @Override
+    public String toString() {
+        return "Quote{" +
+                "isin='" + isin + '\'' +
+                ", bid=" + bid +
+                ", ask=" + ask +
+                '}';
+    }
 }
